@@ -811,6 +811,8 @@ INDEX_TEMPLATE = """
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <style>
 :root{
   --accent:#0b57d0; /* M3 Primary Light */
@@ -1321,6 +1323,11 @@ footer{
               <input type="range" id="sl-pid-dist" min="0" max="10" step="0.5" value="2.0" oninput="document.getElementById('val-pid-dist').textContent=parseFloat(this.value).toFixed(1)+' L/m'"/>
               <div class="rl"><span>0.0 L/m Zero Inflow</span><span>5.0</span><span>10.0 L/m Heavy Flush</span></div>
             </div>
+            <div class="ctrl">
+              <div class="ctrl-top"><span class="ctrl-name">Simulation Time (Duration)</span><span class="ctrl-val" id="val-pid-time">300 Seconds</span></div>
+              <input type="range" id="sl-pid-time" min="30" max="600" step="10" value="300" oninput="document.getElementById('val-pid-time').textContent=this.value+' Seconds'"/>
+              <div class="rl"><span>30s Fast Response</span><span>315s</span><span>600s Steady State</span></div>
+            </div>
             <button class="btn btn-p btn-full" id="btn-pid-sim" onclick="runPidSimulation()">
               <div class="spinner"></div>
               <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">play_arrow</span>
@@ -1731,7 +1738,7 @@ async function runPidSimulation(){
     setpoint: parseFloat(document.getElementById('sl-pid-sp').value),
     initial_temp: parseFloat(document.getElementById('sl-pid-init').value),
     disturbance: parseFloat(document.getElementById('sl-pid-dist').value),
-    duration: 60
+    duration: parseInt(document.getElementById('sl-pid-time').value)
   };
   
   try{
@@ -1805,6 +1812,21 @@ function renderPidChart(sim){
           labels: {
             color: '#1f1f1f',
             font: { family: "'Google Sans', Roboto, sans-serif", size: 11, weight: '500' }
+          }
+        },
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: 'x',
+          },
+          zoom: {
+            wheel: {
+              enabled: true,
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'x',
           }
         }
       },
@@ -2096,8 +2118,9 @@ def pid_simulate():
     sp = float(d.get('setpoint', 50.0))
     init = float(d.get('initial_temp', 20.0))
     dist = float(d.get('disturbance', 2.0))
+    dur = int(d.get('duration', 300))
     
-    sim = run_pid_simulation(sp, init, dist)
+    sim = run_pid_simulation(sp, init, dist, duration=dur)
     
     # Generate default charts at k=15
     k = 15
